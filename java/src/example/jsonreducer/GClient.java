@@ -1,30 +1,29 @@
-package example.echo;
+package example.jsonreducer;
 
 import org.gearman.client.*;
 import org.gearman.common.Constants;
 import org.gearman.common.GearmanJobServerConnection;
 import org.gearman.common.GearmanNIOJobServerConnection;
-import org.gearman.example.ReverseFunction;
 import org.gearman.util.ByteUtils;
+import org.json.simple.JSONObject;
 
 /**
  * Created by prancer on 7/2/14.
  */
-public class ReverseClient {
-    private GearmanClient client;
+public class GClient {
+    private org.gearman.client.GearmanClient client;
 
-    public ReverseClient(GearmanJobServerConnection conn) {
+    public GClient(GearmanJobServerConnection conn) {
         client = new GearmanClientImpl();
         client.addJobServer(conn);
     }
 
-    public ReverseClient(String host, int port) {
+    public GClient(String host, int port) {
         this(new GearmanNIOJobServerConnection(host, port));
     }
 
-    public String reverse(String input) {
-        String function = ReverseFunction.class.getCanonicalName();
-        function = "greet";
+    public String reduce(String input) {
+        String function = "jsonreducer";
 
         String uniqueId = null;
         byte[] data = ByteUtils.toUTF8Bytes(input);
@@ -65,20 +64,25 @@ public class ReverseClient {
                 port = Integer.parseInt(arg.substring(2));
             }
         }
-        System.out.println("Input: "+ payload);
-        ReverseClient rc = new ReverseClient(host, port);
-        System.out.println("Result: " + rc.reverse(payload));                                //NOPMD
+
+        JSONObject obj = new JSONObject();
+        obj.put("x", new Integer(4));
+        obj.put("y", new Integer(2));
+
+        System.out.println("Input: "+ obj.toString());
+        GClient rc = new GClient(host, port);
+        System.out.println("Result: " + rc.reduce(obj.toString()));                                //NOPMD
         rc.shutdown();
     }
 
     public static void usage() {
         String[] usage = {
-                "usage: org.gearman.example.ReverseClient [-h<host>] [-p<port>] " +
+                "usage: org.gearman.example.GClient [-h<host>] [-p<port>] " +
                         "<string>",
                 "\t-h<host> - job server host",
                 "\t-p<port> - job server port",
-                "\n\tExample: java org.gearman.example.ReverseClient Foo",
-                "\tExample: java org.gearman.example.ReverseClient -h127.0.0.1 " +
+                "\n\tExample: java org.gearman.example.GClient Foo",
+                "\tExample: java org.gearman.example.GClient -h127.0.0.1 " +
                         "-p4730 Bar", //
         };
 

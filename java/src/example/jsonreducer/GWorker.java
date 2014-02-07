@@ -1,4 +1,4 @@
-package example.echo;
+package example.jsonreducer;
 
 import org.gearman.client.GearmanJobResult;
 import org.gearman.client.GearmanJobResultImpl;
@@ -7,13 +7,14 @@ import org.gearman.common.GearmanNIOJobServerConnection;
 import org.gearman.worker.AbstractGearmanFunction;
 import org.gearman.worker.GearmanWorker;
 import org.gearman.worker.GearmanWorkerImpl;
-
-import java.io.IOException;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 /**
  * Created by prancer on 7/2/14.
  */
-public class ReverseWorker {
+public class GWorker {
 
     public static void main(String[] args) {
         final GearmanJobServerConnection connection = new
@@ -33,20 +34,41 @@ public class ReverseWorker {
 
         @Override
         public String getName() {
-            return "greet";
+            return "jsonreducer";
         }
 
         @Override
         public GearmanJobResult executeFunction() {
 
-            final byte[] hello = "hello ".getBytes();
-            final byte[] name = (byte[]) this.data;
+            JSONParser parser = new JSONParser();
+            Object obj;
+            double cal_res = 1.0;
+            try {
 
-            final byte[] resp = new byte[hello.length + name.length];
+                obj = parser.parse( new String((byte[]) this.data));
+                JSONObject jsonObject = (JSONObject) obj;
 
-            System.arraycopy(hello, 0, resp, 0, hello.length);
-            System.arraycopy(name, 0, resp, hello.length, name.length);
+                Long x = (Long) jsonObject.get("x");
+                System.out.println(x);
 
+                Long y = (Long) jsonObject.get("y");
+                System.out.println(y);
+
+
+                for (int i=0; i<y; i++) cal_res *= x;
+
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
+            JSONObject res_obj = new JSONObject();
+            res_obj.put("res", new Long((long) cal_res));
+
+            final byte[] resp_bytes = res_obj.toString().getBytes();
+
+            final byte[] resp = new byte[resp_bytes.length];
+
+            System.arraycopy(resp_bytes, 0, resp, 0, resp_bytes.length);
             return new GearmanJobResultImpl(this.jobHandle, true, resp, EMPTY_BYTES, EMPTY_BYTES, 0, 0);
         }
     }
